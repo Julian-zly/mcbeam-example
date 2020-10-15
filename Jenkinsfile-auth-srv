@@ -38,7 +38,6 @@ pipeline {
 
                 sh '''
 
-				cd ${WORKSPACE}/${JOB_NAME}
 
 				GIT_TAG=$(git describe --abbrev=0 --tags --always --match "v*")
 
