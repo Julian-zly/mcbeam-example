@@ -14,17 +14,17 @@ pipeline {
 	}
     stages {
 
-        stage('Checkout') {
+        /* stage('Checkout') {
 
             steps {
 
                 echo '1: Checkout'
 
-                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: './mcbeam/test/${JOB_NAME}']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/18721230141/mcbeam-example.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/18721230141/mcbeam-example.git']]])
 
             }
 
-        }       
+        }  */     
 
         stage('Build to Docker') {
 
@@ -38,7 +38,7 @@ pipeline {
 
                 sh '''
 
-				cd ${WORKSPACE}/mcbeam/test/${JOB_NAME}
+				cd ${WORKSPACE}/${JOB_NAME}
 
 				GIT_TAG=$(git describe --abbrev=0 --tags --always --match "v*")
 
