@@ -1,0 +1,95 @@
+pipeline {
+
+    agent any
+	
+	environment{
+		// 将构建任务中的构建参数转换为环境变量
+		DOCKER_REGISTRY_URL = "ccr.ccs.tencentyun.com"
+        IMAGE_TAG =  sh(script: "echo `date '+%Y%m%d-%H%M%S'`", returnStdout: true).trim()
+        ORIGIN_REPO =  'ccr.ccs.tencentyun.com/mcbeam'
+        REPO =  'auth_srv'
+		K8S_YAML_DIR="/home/ubuntu/data/k8s_update_yaml/test"
+	
+	
+	}
+    stages {
+
+        // stage('Checkout') {
+
+        //    steps {
+
+        //        echo '1: Checkout'
+
+        //        checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: '']], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/18721230141/mcbeam-example.git']]])
+
+        //    }
+
+        // }       
+
+        stage('Build to Docker') {
+
+            steps {
+
+                echo '2: Building'
+				
+				echo '${IMAGE_TAG}'
+				
+				withCredentials([usernamePassword(credentialsId: '8e5559cd-7bd7-46e9-85bb-808ea43d8a2d', passwordVariable: 'password', usernameVariable: 'username')]) {
+
+                sh '''
+
+
+				GIT_TAG=$(git describe --abbrev=0 --tags --always --match "v*")
+
+				git checkout ${GIT_TAG}
+				
+				docker login -u $username -p $password ${DOCKER_REGISTRY_URL}
+				
+				docker build --build-arg SSH_PRIVATE_KEY="$(cat /home/ubuntu/.ssh/id_rsa)" --build-arg SRV=${REPO} -f Dockerfile -t ${ORIGIN_REPO}/${REPO}:${IMAGE_TAG} .
+
+				docker_url="${ORIGIN_REPO}/${REPO}:${IMAGE_TAG}"
+				
+				VER_NUM="${ORIGIN_REPO}/${REPO}:latest"
+				
+				echo $VER_NUM
+				echo $docker_url
+
+				sed -i "s!${VER_NUM}!${docker_url}!g"  deployment-${REPO}.yaml
+
+				cp deployment-${REPO}.yaml ${K8S_YAML_DIR}
+
+				
+				docker push ${ORIGIN_REPO}/${REPO}:${IMAGE_TAG}
+				
+				docker rmi ${ORIGIN_REPO}/${REPO}:${IMAGE_TAG}
+				
+				echo 'Docker build secusss'
+
+                '''
+
+				}
+			}
+        }
+
+
+        stage('Deploy') {
+
+            steps {
+
+                echo '3: Deploying'
+			
+				sh '''
+				
+				kubectl apply -f deployment-${REPO}.yaml  --record
+
+				'''
+				
+				echo '部署流程结束'
+
+            }
+
+        }
+
+    }
+
+}
