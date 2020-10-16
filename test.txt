@@ -6,4 +6,3 @@ ddd
 eee
 ff
 ccc
-ccc
