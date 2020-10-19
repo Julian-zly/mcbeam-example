@@ -6,4 +6,3 @@ ddd
 eeea
 aaaaa
 dddddddd
-c
